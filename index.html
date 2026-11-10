@@ -13,6 +13,7 @@
 <style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
+<script>window.PWA = true;</script>
 <title>Abrigo Patinhas</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -327,6 +328,8 @@ body::before{background:#946240}
 .ov.lt.big .lt-face{margin:0 0 4px!important;box-shadow:0 4px 0 rgba(0,0,0,.35)}
 .ov.lt.big .lt-face > img{object-position:center top}
 @media(max-width:560px){.ov.lt.big .lt-face{width:140px;height:140px}.ov.lt.big .lt-face.wide{width:100%;height:auto}}
+.tabs{scrollbar-width:none;-ms-overflow-style:none}
+.tabs::-webkit-scrollbar{display:none}
 </style>
 
 <div class="top"><div class="wrap" style="padding-block:0">
@@ -1976,6 +1979,29 @@ function render(){
   m.querySelectorAll('[data-dep]').forEach(b=>b.onclick=()=>deposit(+b.dataset.dep));
 }
 
+/* ================= INSTALAR NO CELULAR (PWA) ================= */
+let installEvt = null;
+const isStandalone = ()=>window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = ()=>/iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); installEvt = e; const b = $('#tInstall'); if(b) b.hidden = false; });
+window.addEventListener('appinstalled', ()=>{ installEvt = null; toast('Jogo instalado! Procure o ícone da Tai na tela inicial. 🐾'); });
+const canInstall = ()=>window.PWA && !isStandalone();
+async function installApp(){
+  if(installEvt){ installEvt.prompt(); const r = await installEvt.userChoice; installEvt = null; if(r.outcome==='accepted') toast('Instalando... 🐾'); return; }
+  const ios = isIOS();
+  openModal(`<div class="mhead"><h2>📲 Instalar o jogo</h2><button class="x" data-x aria-label="Fechar">×</button></div>
+    ${ios ? `<ol style="margin:0;padding-left:20px;display:grid;gap:8px;font-weight:700">
+      <li>Toque no botão <b>Compartilhar</b> do Safari (o quadradinho com a seta para cima ⬆️).</li>
+      <li>Role a lista e toque em <b>Adicionar à Tela de Início</b>.</li>
+      <li>Toque em <b>Adicionar</b>. O ícone da Tai aparece junto dos seus apps!</li></ol>
+      <p class="muted" style="margin:10px 0 0">Precisa estar aberto no <b>Safari</b>. Se estiver em outro navegador, copie o link e abra no Safari.</p>`
+    : `<ol style="margin:0;padding-left:20px;display:grid;gap:8px;font-weight:700">
+      <li>Toque no menu <b>⋮</b> do Chrome (no canto de cima).</li>
+      <li>Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</li>
+      <li>Confirme. O ícone da Tai aparece junto dos seus apps!</li></ol>`}`, true);
+  titleBack = true;
+}
+
 /* ================= TÍTULO ================= */
 function openTitle(){
   const has = !!load();
@@ -1987,6 +2013,7 @@ function openTitle(){
       ${has?'<button class="btn pri" id="tCont">Continuar</button>':''}
       <button class="btn ${has?'':'pri'}" id="tNew">Novo jogo</button>
       <button class="btn" id="tHelp">Como jogar</button>
+      ${canInstall() ? `<button class="btn ok" id="tInstall">📲 Instalar no celular</button>` : ''}
     </div>
     <div id="tConfirm"></div>
   </div>`, false);
@@ -1997,6 +2024,7 @@ function openTitle(){
     start();
   };
   $('#tHelp').onclick = ()=>{ titleBack = true; openHelp(); };
+  if($('#tInstall')) $('#tInstall').onclick = installApp;
 }
 
 /* ================= INÍCIO ================= */
